@@ -1,0 +1,93 @@
+'use client'
+
+import { useState } from 'react'
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+
+export default function ArticleQA() {
+  const [url, setUrl] = useState('')
+  const [content, setContent] = useState('')
+  const [question, setQuestion] = useState('')
+  const [answer, setAnswer] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setAnswer('')
+
+    try {
+      const response = await fetch('/api/qa', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url, content, question }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to get answer')
+      }
+
+      const data = await response.json()
+      setAnswer(data.answer)
+    } catch (error) {
+      console.error('Error:', error)
+      setAnswer('An error occurred while processing your request.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="container mx-auto p-4">
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>Article Q&A</CardTitle>
+          <CardDescription>Enter an article URL or content, then ask a question about it.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Input
+                type="text"
+                placeholder="Enter article URL"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+              />
+            </div>
+            <div>
+              <Textarea
+                placeholder="Or paste article content here"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                rows={5}
+              />
+            </div>
+            <div>
+              <Input
+                type="text"
+                placeholder="Ask a question about the article"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+              />
+            </div>
+            <Button type="submit" disabled={loading || (!url && !content) || !question}>
+              {loading ? 'Processing...' : 'Get Answer'}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter>
+          {answer && (
+            <div className="mt-4">
+              <h3 className="font-bold">Answer:</h3>
+              <p>{answer}</p>
+            </div>
+          )}
+        </CardFooter>
+      </Card>
+    </div>
+  )
+}
